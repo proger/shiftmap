@@ -138,3 +138,5 @@ var profiler = (function() {
 
     return profiler;
 })();
+
+module.exports = profiler;

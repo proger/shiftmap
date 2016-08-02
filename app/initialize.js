@@ -1,11 +1,6 @@
 var jsfeat = require("jsfeat");
 var profiler = require("./profiler.js");
-var compatibility = require("./compatibility.js").compatibility;
-
-console.log(jsfeat);
-console.log(profiler);
-console.log("prof: " + compatibility);
-
+var compatibility = require("./compatibility.js");
 
 document.addEventListener('DOMContentLoaded', function() {
      // lets do some fun
