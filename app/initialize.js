@@ -1,8 +1,7 @@
 var jsfeat = require("jsfeat");
 var profiler = require("./profiler.js");
 var compatibility = require("./compatibility.js");
-
-console.log(webppl);
+var prob = require("./prob.js")
 
 var stat = new profiler();
 var canvas,ctx,canvasWidth,canvasHeight;
