@@ -12,8 +12,7 @@
     "build": "brunch build --production"
   },
   "dependencies": {
-    "jsfeat": "0.0.8",
-    "webppl": "^0.9.1"
+    "jsfeat": "0.0.8"
   },
   "devDependencies": {
     "brunch": "^2.0.0",

@@ -2,6 +2,8 @@ var jsfeat = require("jsfeat");
 var profiler = require("./profiler.js");
 var compatibility = require("./compatibility.js");
 
+console.log(webppl);
+
 document.addEventListener('DOMContentLoaded', function() {
      // lets do some fun
      var video = document.getElementById('webcam');
