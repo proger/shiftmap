@@ -91,6 +91,16 @@ function countShiftmapDiscontinuties(shiftmap) {
     return count
 }
 
+function applyShiftmap(src, shiftmap, dest) {
+    for(i = 0; i < shiftmap.length; i++) {
+        for(j = 0; j < shiftmap[i].length; j++) {
+            var dest_idx = 3 * (i * shiftmap[i].length + j)
+            var src_idx = dest_idx + 3 * (shiftmap[i][j].y * shiftmap[i].length + shiftmap[i][j].x)
+            dest.data[dest_idx] = src.data[src_idx]
+        }
+    }
+}
+
 function tick() {
     var img = document.getElementById("sourceImage");
 
