@@ -1,7 +1,7 @@
 var jsfeat = require("jsfeat");
 var profiler = require("./profiler.js");
 var compatibility = require("./compatibility.js");
-var prob = require("./prob.js")
+// var prob = require("./prob.js")
 
 /// repopulates RGBA imageData buffer using the grayscale matrix (mutating)
 function matrix2id_gray(matrix, imageData) {
@@ -17,9 +17,15 @@ function matrix2id_gray(matrix, imageData) {
 /// copies a jsfeat matrix into an imageData buffer (mutating)
 function matrix2id_rgba(matrix, imageData) {
     var data_u32 = new Uint32Array(imageData.data.buffer);
-    var i = matrix.cols*matrox.rows;
-    while (--i >= 0) {
-        data_u32[i] = matrix.data[i];
+    var i, j;
+    for (i = 0; i < matrix.rows; i++) {
+        for (j = 0; j < matrix.cols; j++) {
+            var idx = (i*matrix.cols + j);
+            var r = matrix.data[idx+0];            
+            var g = matrix.data[idx+1];
+            var b = matrix.data[idx+2];            
+            data_u32[idx] = (0xff << 24) | (b << 16) | (g << 8) | r;
+        }
     }
 }
 
@@ -41,16 +47,20 @@ function tick() {
         var gray_img = new jsfeat.matrix_t(w, h, jsfeat.U8_t | jsfeat.C1_t);
         jsfeat.imgproc.grayscale(imageData.data, w, h, gray_img, jsfeat.COLOR_RGBA2GRAY);
 
+
+        var resized = gray_img;//  = new jsfeat.matrix_t(w, h, jsfeat.U8_t | jsfeat.C1_t);
+        // jsfeat.imgproc.resample(gray_img, resized, w, h);
+
         var blur_img = new jsfeat.matrix_t(w, h, jsfeat.U8_t | jsfeat.C1_t);
-        jsfeat.imgproc.gaussian_blur(gray_img, blur_img, 9);
+        jsfeat.imgproc.gaussian_blur(resized, blur_img, 9);
         
         var gradient = new jsfeat.matrix_t(w, h, jsfeat.F32_t | jsfeat.C2_t);
         jsfeat.imgproc.sobel_derivatives(blur_img, gradient);
 
         var magnitude = new jsfeat.matrix_t(w, h, jsfeat.F32_t | jsfeat.C1_t);
 
-        for(i = 0; i < gradient.rows; i++){
-            for(j = 0; j < gradient.cols; j++) {
+        for (i = 0; i < gradient.rows; i++){
+            for (j = 0; j < gradient.cols; j++) {
                 var idx = i * gradient.cols + j;
                 magnitude.data[idx] = Math.sqrt(
                     gradient.data[2 * idx] * gradient.data[2 * idx] +
