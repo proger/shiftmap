@@ -41,8 +41,6 @@ function getGradientMagnitude(img) {
     var w = img.width
     var h = img.height
 
-    console.log(w + " " + h)
-
     var gray_img = new jsfeat.matrix_t(w, h, jsfeat.U8_t | jsfeat.C1_t);
     jsfeat.imgproc.grayscale(img.data, w, h, gray_img, jsfeat.COLOR_RGBA2GRAY);
 
@@ -66,6 +64,33 @@ function getGradientMagnitude(img) {
     return magnitude
 }
 
+function countShiftmapDiscontinuties(shiftmap) {
+    var count = 0
+    var dirs = [{x:  0, y: -1}, // above
+                {x:  0, y:  1}, // bellow
+                {x: -1, y:  0}, // left
+                {x:  1, y:  0}] // right
+
+    for(i = 0; i < shiftmap.length; i++) {
+        for(j = 0; j < shiftmap[i].length; j++) {
+            for(d = 0; d < dirs.length; d++){
+               var ii = i + dirs[d].y, jj = j + dirs[d].x
+               // Handle top and bottom rows
+               if(ii < 0 || ii === shiftmap.length) continue
+                // Handle left and right cols
+               if(jj < 0 || jj === shiftmap[i].length) continue
+
+               if(shiftmap[i][j].x !== shiftmap[ii][jj].x ||
+                  shiftmap[i][j].y !== shiftmap[ii][jj].y) {
+                    count++
+                }
+            }
+        }
+    }
+
+    return count
+}
+
 function tick() {
     var img = document.getElementById("sourceImage");
 
@@ -73,6 +98,15 @@ function tick() {
         var magnitude = getGradientMagnitude(imageData);
         matrix2id_gray(magnitude, imageData);
     });
+
+    var shiftmap = [
+        [{x: 1, y: 1}, {x: 1, y: 0}, {x: 1, y: 1}],
+        [{x: 1, y: 1}, {x: 1, y: 1}, {x: 2, y: 1}],
+        [{x: 1, y: 1}, {x: 1, y: 1}, {x: 1, y: 1}]
+    ]
+
+    console.log(countShiftmapDiscontinuties(shiftmap))
+
 
     // withCanvasImageData(document.getElementById('resample'), img, function(imageData) {
     //     var w = 300,
