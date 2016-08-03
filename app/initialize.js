@@ -70,6 +70,7 @@ function countShiftmapDiscontinuties(shiftmap) {
                 {x:  0, y:  1}, // bellow
                 {x: -1, y:  0}, // left
                 {x:  1, y:  0}] // right
+    var i, j
 
     for(i = 0; i < shiftmap.length; i++) {
         for(j = 0; j < shiftmap[i].length; j++) {
@@ -92,6 +93,7 @@ function countShiftmapDiscontinuties(shiftmap) {
 }
 
 function applyShiftmap(src, shiftmap, dest) {
+    var i, j
     for(i = 0; i < shiftmap.length; i++) {
         for(j = 0; j < shiftmap[i].length; j++) {
             var dest_idx = 3 * (i * shiftmap[i].length + j)
