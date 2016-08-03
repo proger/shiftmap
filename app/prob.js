@@ -1,5 +1,6 @@
 console.log(webppl);
 
+// XXX: figure out how to compile this at build time
 var probprog = function () {
     var binomial = function() {
         var a = flip();
