@@ -21,9 +21,9 @@ function matrix2id_rgba(matrix, imageData) {
     for (i = 0; i < matrix.rows; i++) {
         for (j = 0; j < matrix.cols; j++) {
             var idx = (i*matrix.cols + j);
-            var r = matrix.data[idx+0];            
+            var r = matrix.data[idx+0];
             var g = matrix.data[idx+1];
-            var b = matrix.data[idx+2];            
+            var b = matrix.data[idx+2];
             data_u32[idx] = (0xff << 24) | (b << 16) | (g << 8) | r;
         }
     }
@@ -37,49 +37,52 @@ function withCanvasImageData(canvas, image, callback) {
     ctx.putImageData(imageData, 0, 0);
 }
 
+function getGradientMagnitude(img) {
+    var w = img.width
+    var h = img.height
+
+    console.log(w + " " + h)
+
+    var gray_img = new jsfeat.matrix_t(w, h, jsfeat.U8_t | jsfeat.C1_t);
+    jsfeat.imgproc.grayscale(img.data, w, h, gray_img, jsfeat.COLOR_RGBA2GRAY);
+
+    var blur_img = new jsfeat.matrix_t(w, h, jsfeat.U8_t | jsfeat.C1_t);
+    jsfeat.imgproc.gaussian_blur(gray_img, blur_img, 9);
+
+    var gradient = new jsfeat.matrix_t(w, h, jsfeat.F32_t | jsfeat.C2_t);
+    jsfeat.imgproc.sobel_derivatives(blur_img, gradient);
+
+    var magnitude = new jsfeat.matrix_t(w, h, jsfeat.F32_t | jsfeat.C1_t);
+
+    for (i = 0; i < gradient.rows; i++){
+        for (j = 0; j < gradient.cols; j++) {
+            var idx = i * gradient.cols + j;
+            magnitude.data[idx] = Math.sqrt(
+                gradient.data[2 * idx] * gradient.data[2 * idx] +
+                    gradient.data[2 * idx + 1] * gradient.data[2 * idx + 1])
+        }
+    }
+
+    return magnitude
+}
+
 function tick() {
     var img = document.getElementById("sourceImage");
 
     withCanvasImageData(document.getElementById('canvas'), img, function(imageData) {
-        var w = imageData.width,
-            h = imageData.height;
-        
-        var gray_img = new jsfeat.matrix_t(w, h, jsfeat.U8_t | jsfeat.C1_t);
-        jsfeat.imgproc.grayscale(imageData.data, w, h, gray_img, jsfeat.COLOR_RGBA2GRAY);
-
-
-        var resized = gray_img;//  = new jsfeat.matrix_t(w, h, jsfeat.U8_t | jsfeat.C1_t);
-        // jsfeat.imgproc.resample(gray_img, resized, w, h);
-
-        var blur_img = new jsfeat.matrix_t(w, h, jsfeat.U8_t | jsfeat.C1_t);
-        jsfeat.imgproc.gaussian_blur(resized, blur_img, 9);
-        
-        var gradient = new jsfeat.matrix_t(w, h, jsfeat.F32_t | jsfeat.C2_t);
-        jsfeat.imgproc.sobel_derivatives(blur_img, gradient);
-
-        var magnitude = new jsfeat.matrix_t(w, h, jsfeat.F32_t | jsfeat.C1_t);
-
-        for (i = 0; i < gradient.rows; i++){
-            for (j = 0; j < gradient.cols; j++) {
-                var idx = i * gradient.cols + j;
-                magnitude.data[idx] = Math.sqrt(
-                    gradient.data[2 * idx] * gradient.data[2 * idx] +
-                        gradient.data[2 * idx + 1] * gradient.data[2 * idx + 1])
-            }
-        }
-
+        var magnitude = getGradientMagnitude(imageData);
         matrix2id_gray(magnitude, imageData);
     });
 
-    withCanvasImageData(document.getElementById('resample'), img, function(imageData) {
-        var w = 300,
-            h = imageData.height;
+    // withCanvasImageData(document.getElementById('resample'), img, function(imageData) {
+    //     var w = 300,
+    //         h = imageData.height;
 
-        var dest = new jsfeat.matrix_t(w, h, jsfeat.U8_t | jsfeat.C3_t);
-        jsfeat.imgproc.resample(imageData.data, dest, w, h); // XXX wtf
-        
-        matrix2id_rgba(dest, imageData);
-    });
+    //     var dest = new jsfeat.matrix_t(w, h, jsfeat.U8_t | jsfeat.C3_t);
+    //     jsfeat.imgproc.resample(imageData.data, dest, w, h); // XXX wtf
+
+    //     matrix2id_rgba(dest, imageData);
+    // });
 }
 
 document.addEventListener('DOMContentLoaded', function() {
