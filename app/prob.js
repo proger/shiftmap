@@ -8,7 +8,8 @@ g_monomap_in = {};
 var monomap = function() {
     var w = g_monomap_in.width,
         h = g_monomap_in.height,
-        saliency = g_monomap_in.saliency;
+        saliency = g_monomap_in.saliency,
+        img_matrix = g_monomap_in.img_matrix;
 
     var clamp = function(x,y) {
         // XXX: is it better to condition instead?
@@ -36,7 +37,8 @@ var monomap = function() {
         //console.log(proposal);
         // smoothness term: shift-map monotonicity
         factor(-10*shiftmaps.countShiftmapDiscontinuties(proposal));
-        // TODO color / gradient differences
+        // color / gradient differences
+        factor(-10*shiftmaps.getColorAndGradDiscontinuties(img_matrix, proposal));        
         return proposal;
     };
 
@@ -85,8 +87,8 @@ function evalf(fun, callback) {
 }
 
 module.exports = {
-    monomap: function(w, h, s, callback) {
-        g_monomap_in = {width: w, height: h, saliency: s};
+    monomap: function(w, h, s, i, callback) {
+        g_monomap_in = {width: w, height: h, saliency: s, img_matrix: i};
         evalf(monomap, callback);
     }
 };
