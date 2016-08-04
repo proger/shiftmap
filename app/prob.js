@@ -1,5 +1,7 @@
 console.log("webppl vsn: " + webppl.version);
 
+shiftmaps = require("./shiftmaps.js"); // global!
+
 g_monomap_in = {};
 
 // XXX: figure out how to compile this at build time
@@ -7,59 +9,60 @@ var monomap = function() {
     var w = g_monomap_in.width,
         h = g_monomap_in.height;
 
-    //debugger
-    var clamp = function(vec) {
+    var clamp = function(x,y) {
         // XXX: is it better to condition instead?
-        return {
-            x: Math.trunc(Math.min(Math.max(vec.x, 0), w)),
-            y: Math.trunc(Math.min(Math.max(vec.y, 0), h))
-        };
+        return [Math.trunc(Math.min(Math.max(x, 0), w)),
+                Math.trunc(Math.min(Math.max(y, 0), h))];
     }; 
 
-    var maxap = MAP(Infer({method: 'MCMC', samples: 5}, function() {
+    var maxap = Infer({method: 'MCMC',
+                       samples: 20, // currently second per sample
+                       verbose: true,
+                       onlyMAP: true}, function() {
         var xs = Gamma({shape: 1, scale: 5});
         var ys = Gaussian({mu: 0, sigma: 5});
-        var vec = function() {
-            return clamp({x: sample(xs), y: sample(ys)}) ;
-        };
         var proposal = map(function(j) {
             map(function(i) {
-                return j === 0 ? {x:i, y:j} : vec();
+                return j === 0 ? [i,j] : clamp(sample(xs), sample(ys));
             }, _.range(w));
         }, _.range(h));
-        // XXX: global function
-        // factor(-countShiftmapDiscontinuties(proposal));
+        factor(-10*shiftmaps.countShiftmapDiscontinuties(proposal));
         return proposal;
-    })).val;
-    //console.log("maxap: " + maxap);
-    return maxap;
+    });
+    var maxval = maxap[Object.keys(maxap)[0]].dist;
+    //console.log(JSON.parse(Object.keys(maxval)[0]));
+    return JSON.parse(Object.keys(maxval)[0]);
 };
 
-function evalf(fun) {
+function evalf(fun, callback) {
     var term = ['(',fun.toString(),')()'].join('');
     var wpterm = eval.call({}, webppl.compile(term));
-
+    
     var handleError = function() {
-        // XXX: propagate this?
-        console.log(arguments);
+        callback(arguments, null);
     };
-    var baseRunner = util.trampolineRunners.web(Infinity);
-    var retVal = "MONKEY";
+    var timeslice = 100;
+    var baseRunner = util.trampolineRunners.web(timeslice);
+    var success = function(_globalStore, retval) {
+        try {
+            callback(null, retval);
+        } catch (e) {
+            console.error("callback errored: " + JSON.stringify(e));
+            throw e;
+        }
+    };
     var prepared = webppl.prepare(wpterm,
-                                  function(_globalStore, retval) {
-                                      retVal = retval;
-                                  },
+                                  success,
                                   {errorHandlers: [handleError],
                                    debug: false,
                                    baseRunner: baseRunner});
 
     prepared.run();
-    return retVal;
 }
 
 module.exports = {
-    monomap: function(w, h) {
+    monomap: function(w, h, callback) {
         g_monomap_in = {width: w, height: h};
-        return evalf(monomap);
+        evalf(monomap, callback);
     }
 };

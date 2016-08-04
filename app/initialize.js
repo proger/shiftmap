@@ -2,6 +2,7 @@ var jsfeat = require("jsfeat");
 var profiler = require("./profiler.js");
 var compatibility = require("./compatibility.js");
 prob = require("./prob.js");
+var shiftmaps = require("./shiftmaps.js");
 
 /// repopulates RGBA imageData buffer using the grayscale matrix (mutating)
 function matrix2id_gray(matrix, imageData) {
@@ -40,8 +41,9 @@ function withCanvasImageData(canvas, image, callback) {
     var ctx = canvas.getContext('2d');
     ctx.drawImage(image, 0, 0);
     var imageData = ctx.getImageData(0, 0, image.width, image.height);
-    callback(imageData);
-    ctx.putImageData(imageData, 0, 0);
+    callback(imageData, function() {
+        ctx.putImageData(imageData, 0, 0);
+    });
 }
 
 function getGradientMagnitude(img) {
@@ -70,37 +72,6 @@ function getGradientMagnitude(img) {
     return magnitude;
 }
 
-function countShiftmapDiscontinuties(shiftmap) {
-    var count = 0;
-    var dirs = [{x:  0, y: -1}, // above
-                {x:  0, y:  1}, // bellow
-                {x: -1, y:  0}, // left
-                {x:  1, y:  0}]; // right
-
-    for(var i = 0; i < shiftmap.length; i++) {
-        for(var j = 0; j < shiftmap[i].length; j++) {
-            for(d = 0; d < dirs.length; d++){
-                var ii = i + dirs[d].y, jj = j + dirs[d].x;
-               // Handle top and bottom rows
-                if(ii < 0 || ii === shiftmap.length) {
-                    continue;
-                }
-                // Handle left and right cols
-                if (jj < 0 || jj === shiftmap[i].length) {
-                    continue;
-                }
-
-               if(shiftmap[i][j].x !== shiftmap[ii][jj].x ||
-                  shiftmap[i][j].y !== shiftmap[ii][jj].y) {
-                   count++;
-                }
-            }
-        }
-    }
-
-    return count;
-}
-
 function applyShiftmap(src, shiftmap) {
     var dest = new jsfeat.matrix_t(shiftmap[0].length, shiftmap.length, jsfeat.U8_t | jsfeat.C3_t);
     for(var i = 0; i < shiftmap.length; i++) {
@@ -118,13 +89,20 @@ function applyShiftmap(src, shiftmap) {
     return dest;
 }
 
+function shiftmapArrayToObj(vshiftmap) {
+    var shiftmap = new Array(vshiftmap.length);
+    for(var i = 0; i < vshiftmap.length; i++) {
+        shiftmap[i] = new Array(vshiftmap[i].length);
+        for(var j = 0; j < vshiftmap[i].length; j++) {
+            shiftmap[i][j] = {x: vshiftmap[i][j][0],
+                              y: vshiftmap[i][j][1]};
+        }
+    }
+    return shiftmap;
+}
+
 function tick() {
     var img = document.getElementById("sourceImage");
-
-    withCanvasImageData(document.getElementById('canvas'), img, function(imageData) {
-        var magnitude = getGradientMagnitude(imageData);
-        matrix2id_gray(magnitude, imageData);
-    });
 
     var shiftmap = new Array(50);
     for(var i = 0; i < shiftmap.length; i++) {
@@ -134,16 +112,17 @@ function tick() {
         }
     }
 
-    // var shiftmap = prob.monomap(imageData.width, imageData.height);
-    // console.log("shiftmap: " + shiftmap);
-    // console.log("shiftmap discontinuities: " + countShiftmapDiscontinuties(shiftmap));
-    // withCanvasImageData(OffscreenCanvas(img.width, img.height), img, function(offid) {
-    //     applyShiftmap(offid, shiftmap, imagedata);
-    // });
+    withCanvasImageData(document.getElementById('canvas'), img, function(imageData, callback) {
+        // var magnitude = getGradientMagnitude(imageData);
+        // matrix2id_gray(magnitude, imageData);
 
-    withCanvasImageData(document.getElementById('canvas'), img, function(imageData) {
-        var dest = applyShiftmap(imageData, shiftmap);
-        matrix2id_rgba(dest, imageData);
+        prob.monomap(imageData.width, imageData.height, function(_error, vshiftmap) {
+            var shiftmap = shiftmapArrayToObj(vshiftmap);
+            console.log("shiftmap discontinuities: " + shiftmaps.countShiftmapDiscontinuties(shiftmap));
+            var dest = applyShiftmap(imageData, shiftmap);
+            matrix2id_rgba(dest, imageData);
+            callback();
+        });
     });
 }
 
