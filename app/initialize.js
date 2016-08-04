@@ -61,9 +61,7 @@ function withCanvasImageData(canvas, image, callback) {
     });
 }
 
-function tick() {
-    var img = document.getElementById("sourceImage");
-
+function dumbShiftmap(w, h, callback) {
     var shiftmap = new Array(100);
     for(var i = 0; i < shiftmap.length; i++) {
         shiftmap[i] = new Array(100);
@@ -72,21 +70,25 @@ function tick() {
         }
     }
 
-    withCanvasImageData(document.getElementById('canvas'), img, function(imageData, callback) {
-        var img_matrix = id2matrix_rgb(imageData)
-        console.log("shiftmap discontinuities: " + shiftmaps.countShiftmapDiscontinuties(shiftmap));
-        console.log("RGB and grad discontinuities: " + shiftmaps.getColorAndGradDiscontinuties(img_matrix, shiftmap));
-        var dest = shiftmaps.applyShiftmap(img_matrix, shiftmap);
-        matrix2id_rgba(dest, imageData);
-        callback();
+    callback(null, shiftmap);
+}
 
-        // var img_matrix = id2matrix_rgb(imageData)
-        // prob.monomap(imageData.width, imageData.height, function(_error, vshiftmap) {
-        //     console.log("shiftmap discontinuities: " + shiftmaps.countShiftmapDiscontinuties(shiftmap));
-        //     var dest = applyShiftmap(img_matrix, shiftmap);
-        //     matrix2id_rgba(dest, imageData);
-        //     callback();
-        // });
+function tick() {
+    var img = document.getElementById("sourceImage");
+
+    withCanvasImageData(document.getElementById('canvas'), img, function(imageData, callback) {
+        var img_matrix = id2matrix_rgb(imageData);
+
+        //var sf = prob.monomap;
+        var sf = dumbShiftmap;
+        
+        sf(imageData.width, imageData.height, function(_error, shiftmap) {
+            console.log("shiftmap discontinuities: " + shiftmaps.countShiftmapDiscontinuties(shiftmap));
+            console.log("RGB and grad discontinuities: " + shiftmaps.getColorAndGradDiscontinuties(img_matrix, shiftmap));
+            var dest = shiftmaps.applyShiftmap(img_matrix, shiftmap);
+            matrix2id_rgba(dest, imageData);
+            callback();
+        });
     });
 }
 
