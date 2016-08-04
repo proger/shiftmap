@@ -13,22 +13,33 @@ var monomap = function() {
         // XXX: is it better to condition instead?
         return [Math.trunc(Math.min(Math.max(x, 0), w)),
                 Math.trunc(Math.min(Math.max(y, 0), h))];
-    }; 
+    };
 
-    var maxap = Infer({method: 'MCMC',
-                       samples: 20, // currently second per sample
-                       verbose: true,
-                       onlyMAP: true}, function() {
+    var model = function() {
         var xs = Gamma({shape: 1, scale: 5});
         var ys = Gaussian({mu: 0, sigma: 5});
-        var proposal = map(function(j) {
-            map(function(i) {
-                return j === 0 ? [i,j] : clamp(sample(xs), sample(ys));
+        var proposal = map(function(i) {
+            map(function(j) {
+                // pixel rearrangement: force left/right columns to stay the same
+                if (j === 0 || j === (w-1)) {
+                    return [i,j];
+                } else {
+                    return clamp(sample(xs), sample(ys));
+                }
+                // TODO: pixel saliency (through gradient)
             }, _.range(w));
         }, _.range(h));
+        // smoothness term: shift-map monotonicity
         factor(-10*shiftmaps.countShiftmapDiscontinuties(proposal));
+        // TODO color / gradient differences
         return proposal;
-    });
+    };
+
+    var maxap = Infer({method: 'MCMC',
+                       samples: 50,
+                       verbose: true,
+                       onlyMAP: true}, model);
+    
     var maxval = maxap[Object.keys(maxap)[0]].dist;
     //console.log(JSON.parse(Object.keys(maxval)[0]));
     return JSON.parse(Object.keys(maxval)[0]);
