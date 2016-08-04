@@ -31,6 +31,7 @@ function countShiftmapDiscontinuties(shiftmap) {
     return count;
 }
 
+// XXX: currently assumes this is the shiftmap is the same size as src?
 function getColorAndGradDiscontinuties(src, shiftmap) {
     var res = applyShiftmap(src, shiftmap)
 
