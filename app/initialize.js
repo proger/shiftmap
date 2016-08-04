@@ -1,7 +1,7 @@
 var jsfeat = require("jsfeat");
 var profiler = require("./profiler.js");
 var compatibility = require("./compatibility.js");
-// var prob = require("./prob.js")
+var prob = require("./prob.js");
 
 /// repopulates RGBA imageData buffer using the grayscale matrix (mutating)
 function matrix2id_gray(matrix, imageData) {
@@ -66,12 +66,11 @@ function getGradientMagnitude(img) {
                 gradient.data[2 * idx + 1] * gradient.data[2 * idx + 1])
         }
     }
-
-    return magnitude
+    return magnitude;
 }
 
 function countShiftmapDiscontinuties(shiftmap) {
-    var count = 0
+    var count = 0;
     var dirs = [{x:  0, y: -1}, // above
                 {x:  0, y:  1}, // bellow
                 {x: -1, y:  0}, // left
@@ -80,21 +79,25 @@ function countShiftmapDiscontinuties(shiftmap) {
     for(var i = 0; i < shiftmap.length; i++) {
         for(var j = 0; j < shiftmap[i].length; j++) {
             for(d = 0; d < dirs.length; d++){
-               var ii = i + dirs[d].y, jj = j + dirs[d].x
+                var ii = i + dirs[d].y, jj = j + dirs[d].x;
                // Handle top and bottom rows
-               if(ii < 0 || ii === shiftmap.length) continue
+                if(ii < 0 || ii === shiftmap.length) {
+                    continue;
+                }
                 // Handle left and right cols
-               if(jj < 0 || jj === shiftmap[i].length) continue
+                if (jj < 0 || jj === shiftmap[i].length) {
+                    continue;
+                }
 
                if(shiftmap[i][j].x !== shiftmap[ii][jj].x ||
                   shiftmap[i][j].y !== shiftmap[ii][jj].y) {
-                    count++
+                   count++;
                 }
             }
         }
     }
 
-    return count
+    return count;
 }
 
 function applyShiftmap(src, shiftmap) {
