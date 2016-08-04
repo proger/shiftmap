@@ -18,13 +18,19 @@ function matrix2id_gray(matrix, imageData) {
 function matrix2id_rgba(matrix, imageData) {
     var data_u32 = new Uint32Array(imageData.data.buffer);
     var i, j;
+
+    // Clean the canvas
+    for(i = 0; i < data_u32.length; i++)
+        data_u32[i] = 0xff888888
+
     for (i = 0; i < matrix.rows; i++) {
         for (j = 0; j < matrix.cols; j++) {
-            var idx = (i*matrix.cols + j);
-            var r = matrix.data[idx+0];
-            var g = matrix.data[idx+1];
-            var b = matrix.data[idx+2];
-            data_u32[idx] = (0xff << 24) | (b << 16) | (g << 8) | r;
+            var m_idx = 3 * (i * matrix.cols + j);
+            var r = matrix.data[m_idx + 0];
+            var g = matrix.data[m_idx + 1];
+            var b = matrix.data[m_idx + 2];
+            var s_idx = (i * imageData.width + j)
+            data_u32[s_idx] = (0xff << 24) | (b << 16) | (g << 8) | r;
         }
     }
 }
@@ -57,7 +63,7 @@ function getGradientMagnitude(img) {
             var idx = i * gradient.cols + j;
             magnitude.data[idx] = Math.sqrt(
                 gradient.data[2 * idx] * gradient.data[2 * idx] +
-                    gradient.data[2 * idx + 1] * gradient.data[2 * idx + 1])
+                gradient.data[2 * idx + 1] * gradient.data[2 * idx + 1])
         }
     }
 
@@ -70,10 +76,9 @@ function countShiftmapDiscontinuties(shiftmap) {
                 {x:  0, y:  1}, // bellow
                 {x: -1, y:  0}, // left
                 {x:  1, y:  0}] // right
-    var i, j
 
-    for(i = 0; i < shiftmap.length; i++) {
-        for(j = 0; j < shiftmap[i].length; j++) {
+    for(var i = 0; i < shiftmap.length; i++) {
+        for(var j = 0; j < shiftmap[i].length; j++) {
             for(d = 0; d < dirs.length; d++){
                var ii = i + dirs[d].y, jj = j + dirs[d].x
                // Handle top and bottom rows
@@ -92,15 +97,21 @@ function countShiftmapDiscontinuties(shiftmap) {
     return count
 }
 
-function applyShiftmap(src, shiftmap, dest) {
-    var i, j
-    for(i = 0; i < shiftmap.length; i++) {
-        for(j = 0; j < shiftmap[i].length; j++) {
+function applyShiftmap(src, shiftmap) {
+    var dest = new jsfeat.matrix_t(shiftmap[0].length, shiftmap.length, jsfeat.U8_t | jsfeat.C3_t);
+    for(var i = 0; i < shiftmap.length; i++) {
+        for(var j = 0; j < shiftmap[i].length; j++) {
+            var src_loc = {x: j + shiftmap[i][j].x,
+                           y: i + shiftmap[i][j].y}
             var dest_idx = 3 * (i * shiftmap[i].length + j)
-            var src_idx = dest_idx + 3 * (shiftmap[i][j].y * shiftmap[i].length + shiftmap[i][j].x)
+            var src_idx = 4 * (src_loc.y * src.width + src_loc.x)
+
             dest.data[dest_idx] = src.data[src_idx]
+            dest.data[dest_idx + 1] = src.data[src_idx + 1]
+            dest.data[dest_idx + 2] = src.data[src_idx + 2]
         }
     }
+    return dest
 }
 
 function tick() {
@@ -111,14 +122,18 @@ function tick() {
         matrix2id_gray(magnitude, imageData);
     });
 
-    var shiftmap = [
-        [{x: 1, y: 1}, {x: 1, y: 0}, {x: 1, y: 1}],
-        [{x: 1, y: 1}, {x: 1, y: 1}, {x: 2, y: 1}],
-        [{x: 1, y: 1}, {x: 1, y: 1}, {x: 1, y: 1}]
-    ]
+    var shiftmap = new Array(50)
+    for(var i = 0; i < shiftmap.length; i++) {
+        shiftmap[i] = new Array(50)
+        for(var j = 0; j < shiftmap[i].length; j++) {
+            shiftmap[i][j] = {x: 100, y: 0}
+        }
+    }
 
-    console.log(countShiftmapDiscontinuties(shiftmap))
-
+    withCanvasImageData(document.getElementById('canvas'), img, function(imageData) {
+        var dest = applyShiftmap(imageData, shiftmap)
+        matrix2id_rgba(dest, imageData);
+    });
 
     // withCanvasImageData(document.getElementById('resample'), img, function(imageData) {
     //     var w = 300,
