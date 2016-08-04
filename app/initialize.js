@@ -1,7 +1,7 @@
 var jsfeat = require("jsfeat");
 var profiler = require("./profiler.js");
 var compatibility = require("./compatibility.js");
-var prob = require("./prob.js");
+prob = require("./prob.js");
 
 /// repopulates RGBA imageData buffer using the grayscale matrix (mutating)
 function matrix2id_gray(matrix, imageData) {
@@ -20,8 +20,9 @@ function matrix2id_rgba(matrix, imageData) {
     var i, j;
 
     // Clean the canvas
-    for(i = 0; i < data_u32.length; i++)
-        data_u32[i] = 0xff888888
+    for(i = 0; i < data_u32.length; i++) {
+        data_u32[i] = 0xff888888;
+    }
 
     for (i = 0; i < matrix.rows; i++) {
         for (j = 0; j < matrix.cols; j++) {
@@ -29,7 +30,7 @@ function matrix2id_rgba(matrix, imageData) {
             var r = matrix.data[m_idx + 0];
             var g = matrix.data[m_idx + 1];
             var b = matrix.data[m_idx + 2];
-            var s_idx = (i * imageData.width + j)
+            var s_idx = (i * imageData.width + j);
             data_u32[s_idx] = (0xff << 24) | (b << 16) | (g << 8) | r;
         }
     }
@@ -44,8 +45,8 @@ function withCanvasImageData(canvas, image, callback) {
 }
 
 function getGradientMagnitude(img) {
-    var w = img.width
-    var h = img.height
+    var w = img.width;
+    var h = img.height;
 
     var gray_img = new jsfeat.matrix_t(w, h, jsfeat.U8_t | jsfeat.C1_t);
     jsfeat.imgproc.grayscale(img.data, w, h, gray_img, jsfeat.COLOR_RGBA2GRAY);
@@ -63,7 +64,7 @@ function getGradientMagnitude(img) {
             var idx = i * gradient.cols + j;
             magnitude.data[idx] = Math.sqrt(
                 gradient.data[2 * idx] * gradient.data[2 * idx] +
-                gradient.data[2 * idx + 1] * gradient.data[2 * idx + 1])
+                    gradient.data[2 * idx + 1] * gradient.data[2 * idx + 1]);
         }
     }
     return magnitude;
@@ -74,7 +75,7 @@ function countShiftmapDiscontinuties(shiftmap) {
     var dirs = [{x:  0, y: -1}, // above
                 {x:  0, y:  1}, // bellow
                 {x: -1, y:  0}, // left
-                {x:  1, y:  0}] // right
+                {x:  1, y:  0}]; // right
 
     for(var i = 0; i < shiftmap.length; i++) {
         for(var j = 0; j < shiftmap[i].length; j++) {
@@ -105,16 +106,16 @@ function applyShiftmap(src, shiftmap) {
     for(var i = 0; i < shiftmap.length; i++) {
         for(var j = 0; j < shiftmap[i].length; j++) {
             var src_loc = {x: j + shiftmap[i][j].x,
-                           y: i + shiftmap[i][j].y}
-            var dest_idx = 3 * (i * shiftmap[i].length + j)
-            var src_idx = 4 * (src_loc.y * src.width + src_loc.x)
+                           y: i + shiftmap[i][j].y};
+            var dest_idx = 3 * (i * shiftmap[i].length + j);
+            var src_idx = 4 * (src_loc.y * src.width + src_loc.x);
 
-            dest.data[dest_idx] = src.data[src_idx]
-            dest.data[dest_idx + 1] = src.data[src_idx + 1]
-            dest.data[dest_idx + 2] = src.data[src_idx + 2]
+            dest.data[dest_idx] = src.data[src_idx];
+            dest.data[dest_idx + 1] = src.data[src_idx + 1];
+            dest.data[dest_idx + 2] = src.data[src_idx + 2];
         }
     }
-    return dest
+    return dest;
 }
 
 function tick() {
@@ -125,28 +126,25 @@ function tick() {
         matrix2id_gray(magnitude, imageData);
     });
 
-    var shiftmap = new Array(50)
+    var shiftmap = new Array(50);
     for(var i = 0; i < shiftmap.length; i++) {
-        shiftmap[i] = new Array(50)
+        shiftmap[i] = new Array(50);
         for(var j = 0; j < shiftmap[i].length; j++) {
-            shiftmap[i][j] = {x: 100, y: 0}
+            shiftmap[i][j] = {x: 100, y: 0};
         }
     }
 
+    // var shiftmap = prob.monomap(imageData.width, imageData.height);
+    // console.log("shiftmap: " + shiftmap);
+    // console.log("shiftmap discontinuities: " + countShiftmapDiscontinuties(shiftmap));
+    // withCanvasImageData(OffscreenCanvas(img.width, img.height), img, function(offid) {
+    //     applyShiftmap(offid, shiftmap, imagedata);
+    // });
+
     withCanvasImageData(document.getElementById('canvas'), img, function(imageData) {
-        var dest = applyShiftmap(imageData, shiftmap)
+        var dest = applyShiftmap(imageData, shiftmap);
         matrix2id_rgba(dest, imageData);
     });
-
-    // withCanvasImageData(document.getElementById('resample'), img, function(imageData) {
-    //     var w = 300,
-    //         h = imageData.height;
-
-    //     var dest = new jsfeat.matrix_t(w, h, jsfeat.U8_t | jsfeat.C3_t);
-    //     jsfeat.imgproc.resample(imageData.data, dest, w, h); // XXX wtf
-
-    //     matrix2id_rgba(dest, imageData);
-    // });
 }
 
 document.addEventListener('DOMContentLoaded', function() {
