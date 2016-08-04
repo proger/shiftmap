@@ -9,7 +9,7 @@ function matrix2id_gray(matrix, imageData) {
     var alpha = (0xff << 24);
     var i = matrix.cols*matrix.rows, pix = 0;
     while (--i >= 0) {
-        pix = 128 + Math.round(0.3 * matrix.data[i]);
+        pix = 128 + Math.round(0.1 * matrix.data[i]);
         data_u32[i] = alpha | (pix << 16) | (pix << 8) | pix;
     }
 }
@@ -35,6 +35,21 @@ function matrix2id_rgba(matrix, imageData) {
     }
 }
 
+function id2matrix_rgb(imageData) {
+    var matrix = new jsfeat.matrix_t(imageData.width, imageData.height, jsfeat.U8_t | jsfeat.C3_t);
+    for(var i = 0; i < matrix.rows; i++) {
+        for(var j = 0; j < matrix.cols; j++) {
+            var dest_idx = 3 * (i * matrix.cols + j)
+            var src_idx = 4 * (i * imageData.width + j)
+
+            matrix.data[dest_idx] = imageData.data[src_idx]
+            matrix.data[dest_idx + 1] = imageData.data[src_idx + 1]
+            matrix.data[dest_idx + 2] = imageData.data[src_idx + 2]
+        }
+    }
+    return matrix
+}
+
 function withCanvasImageData(canvas, image, callback) {
     var ctx = canvas.getContext('2d');
     ctx.drawImage(image, 0, 0);
@@ -44,19 +59,13 @@ function withCanvasImageData(canvas, image, callback) {
 }
 
 function getGradientMagnitude(img) {
-    var w = img.width
-    var h = img.height
+    var gray_img = new jsfeat.matrix_t(img.cols, img.rows, jsfeat.U8_t | jsfeat.C1_t);
+    jsfeat.imgproc.grayscale(img.data, img.cols, img.rows, gray_img, jsfeat.COLOR_RGB2GRAY);
 
-    var gray_img = new jsfeat.matrix_t(w, h, jsfeat.U8_t | jsfeat.C1_t);
-    jsfeat.imgproc.grayscale(img.data, w, h, gray_img, jsfeat.COLOR_RGBA2GRAY);
+    var gradient = new jsfeat.matrix_t(img.cols, img.rows, jsfeat.F32_t | jsfeat.C2_t);
+    jsfeat.imgproc.sobel_derivatives(gray_img, gradient);
 
-    var blur_img = new jsfeat.matrix_t(w, h, jsfeat.U8_t | jsfeat.C1_t);
-    jsfeat.imgproc.gaussian_blur(gray_img, blur_img, 9);
-
-    var gradient = new jsfeat.matrix_t(w, h, jsfeat.F32_t | jsfeat.C2_t);
-    jsfeat.imgproc.sobel_derivatives(blur_img, gradient);
-
-    var magnitude = new jsfeat.matrix_t(w, h, jsfeat.F32_t | jsfeat.C1_t);
+    var magnitude = new jsfeat.matrix_t(img.cols, img.rows, jsfeat.F32_t | jsfeat.C1_t);
 
     for (i = 0; i < gradient.rows; i++){
         for (j = 0; j < gradient.cols; j++) {
@@ -107,7 +116,7 @@ function applyShiftmap(src, shiftmap) {
             var src_loc = {x: j + shiftmap[i][j].x,
                            y: i + shiftmap[i][j].y}
             var dest_idx = 3 * (i * shiftmap[i].length + j)
-            var src_idx = 4 * (src_loc.y * src.width + src_loc.x)
+            var src_idx = 3 * (src_loc.y * src.cols + src_loc.x)
 
             dest.data[dest_idx] = src.data[src_idx]
             dest.data[dest_idx + 1] = src.data[src_idx + 1]
@@ -121,7 +130,8 @@ function tick() {
     var img = document.getElementById("sourceImage");
 
     withCanvasImageData(document.getElementById('canvas'), img, function(imageData) {
-        var magnitude = getGradientMagnitude(imageData);
+        var img_matrix = id2matrix_rgb(imageData)
+        var magnitude = getGradientMagnitude(img_matrix);
         matrix2id_gray(magnitude, imageData);
     });
 
@@ -134,7 +144,8 @@ function tick() {
     }
 
     withCanvasImageData(document.getElementById('canvas'), img, function(imageData) {
-        var dest = applyShiftmap(imageData, shiftmap)
+        var img_matrix = id2matrix_rgb(imageData)
+        var dest = applyShiftmap(img_matrix, shiftmap)
         matrix2id_rgba(dest, imageData);
     });
 
