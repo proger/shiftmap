@@ -81,35 +81,6 @@ function getGradientMagnitude(img) {
     return magnitude;
 }
 
-function applyShiftmap(src, shiftmap) {
-    var dest = new jsfeat.matrix_t(shiftmap[0].length, shiftmap.length, jsfeat.U8_t | jsfeat.C3_t);
-    for(var i = 0; i < shiftmap.length; i++) {
-        for(var j = 0; j < shiftmap[i].length; j++) {
-            var src_loc = [j + shiftmap[i][j][0],
-                           i + shiftmap[i][j][1]]
-            var dest_idx = 3 * (i * shiftmap[i].length + j)
-            var src_idx = 3 * (src_loc.y * src.cols + src_loc.x)
-
-            dest.data[dest_idx] = src.data[src_idx];
-            dest.data[dest_idx + 1] = src.data[src_idx + 1];
-            dest.data[dest_idx + 2] = src.data[src_idx + 2];
-        }
-    }
-    return dest;
-}
-
-function shiftmapArrayToObj(vshiftmap) {
-    var shiftmap = new Array(vshiftmap.length);
-    for(var i = 0; i < vshiftmap.length; i++) {
-        shiftmap[i] = new Array(vshiftmap[i].length);
-        for(var j = 0; j < vshiftmap[i].length; j++) {
-            shiftmap[i][j] = {x: vshiftmap[i][j][0],
-                              y: vshiftmap[i][j][1]};
-        }
-    }
-    return shiftmap;
-}
-
 function tick() {
     var img = document.getElementById("sourceImage");
 
