@@ -62,9 +62,9 @@ function withCanvasImageData(canvas, image, callback) {
 }
 
 function dumbShiftmap(w, h, callback) {
-    var shiftmap = new Array(100);
+    var shiftmap = new Array(h);
     for(var i = 0; i < shiftmap.length; i++) {
-        shiftmap[i] = new Array(100);
+        shiftmap[i] = new Array(w);
         for(var j = 0; j < shiftmap[i].length; j++) {
             shiftmap[i][j] = [10,0];
         }
