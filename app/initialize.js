@@ -61,51 +61,32 @@ function withCanvasImageData(canvas, image, callback) {
     });
 }
 
-function getGradientMagnitude(img) {
-    var gray_img = new jsfeat.matrix_t(img.cols, img.rows, jsfeat.U8_t | jsfeat.C1_t);
-    jsfeat.imgproc.grayscale(img.data, img.cols, img.rows, gray_img, jsfeat.COLOR_RGB2GRAY);
-
-    var gradient = new jsfeat.matrix_t(img.cols, img.rows, jsfeat.F32_t | jsfeat.C2_t);
-    jsfeat.imgproc.sobel_derivatives(gray_img, gradient);
-
-    var magnitude = new jsfeat.matrix_t(img.cols, img.rows, jsfeat.F32_t | jsfeat.C1_t);
-
-    for (i = 0; i < gradient.rows; i++){
-        for (j = 0; j < gradient.cols; j++) {
-            var idx = i * gradient.cols + j;
-            magnitude.data[idx] = Math.sqrt(
-                gradient.data[2 * idx] * gradient.data[2 * idx] +
-                gradient.data[2 * idx + 1] * gradient.data[2 * idx + 1]);
-        }
-    }
-    return magnitude;
-}
-
 function tick() {
     var img = document.getElementById("sourceImage");
 
     var shiftmap = new Array(100);
     for(var i = 0; i < shiftmap.length; i++) {
-        shiftmap[i] = new Array(150);
+        shiftmap[i] = new Array(100);
         for(var j = 0; j < shiftmap[i].length; j++) {
-            shiftmap[i][j] = [100,0];
+            shiftmap[i][j] = [10,0];
         }
     }
 
     withCanvasImageData(document.getElementById('canvas'), img, function(imageData, callback) {
-        // var img_matrix = id2matrix_rgb(imageData)
-        // console.log("shiftmap discontinuities: " + shiftmaps.countShiftmapDiscontinuties(shiftmap));
-        // var dest = shiftmaps.applyShiftmap(img_matrix, shiftmap);
-        // matrix2id_rgba(dest, imageData);
-        // callback();
-
         var img_matrix = id2matrix_rgb(imageData)
-        prob.monomap(imageData.width, imageData.height, function(_error, vshiftmap) {
-            console.log("shiftmap discontinuities: " + shiftmaps.countShiftmapDiscontinuties(shiftmap));
-            var dest = applyShiftmap(img_matrix, shiftmap);
-            matrix2id_rgba(dest, imageData);
-            callback();
-        });
+        console.log("shiftmap discontinuities: " + shiftmaps.countShiftmapDiscontinuties(shiftmap));
+        console.log("RGB and grad discontinuities: " + shiftmaps.getColorAndGradDiscontinuties(img_matrix, shiftmap));
+        var dest = shiftmaps.applyShiftmap(img_matrix, shiftmap);
+        matrix2id_rgba(dest, imageData);
+        callback();
+
+        // var img_matrix = id2matrix_rgb(imageData)
+        // prob.monomap(imageData.width, imageData.height, function(_error, vshiftmap) {
+        //     console.log("shiftmap discontinuities: " + shiftmaps.countShiftmapDiscontinuties(shiftmap));
+        //     var dest = applyShiftmap(img_matrix, shiftmap);
+        //     matrix2id_rgba(dest, imageData);
+        //     callback();
+        // });
     });
 }
 
