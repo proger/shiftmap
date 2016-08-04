@@ -85,8 +85,8 @@ function applyShiftmap(src, shiftmap) {
     var dest = new jsfeat.matrix_t(shiftmap[0].length, shiftmap.length, jsfeat.U8_t | jsfeat.C3_t);
     for(var i = 0; i < shiftmap.length; i++) {
         for(var j = 0; j < shiftmap[i].length; j++) {
-            var src_loc = {x: j + shiftmap[i][j].x,
-                           y: i + shiftmap[i][j].y}
+            var src_loc = [j + shiftmap[i][j][0],
+                           i + shiftmap[i][j][1]]
             var dest_idx = 3 * (i * shiftmap[i].length + j)
             var src_idx = 3 * (src_loc.y * src.cols + src_loc.x)
 
@@ -113,23 +113,25 @@ function shiftmapArrayToObj(vshiftmap) {
 function tick() {
     var img = document.getElementById("sourceImage");
 
-    var shiftmap = new Array(50);
+    var shiftmap = new Array(100);
     for(var i = 0; i < shiftmap.length; i++) {
-        shiftmap[i] = new Array(50);
+        shiftmap[i] = new Array(150);
         for(var j = 0; j < shiftmap[i].length; j++) {
-            shiftmap[i][j] = {x: 100, y: 0};
+            shiftmap[i][j] = [100,0];
         }
     }
 
     withCanvasImageData(document.getElementById('canvas'), img, function(imageData, callback) {
         // var img_matrix = id2matrix_rgb(imageData)
-        // var magnitude = getGradientMagnitude(img_matrix);
-        // matrix2id_gray(magnitude, imageData);
+        // console.log("shiftmap discontinuities: " + shiftmaps.countShiftmapDiscontinuties(shiftmap));
+        // var dest = shiftmaps.applyShiftmap(img_matrix, shiftmap);
+        // matrix2id_rgba(dest, imageData);
+        // callback();
 
+        var img_matrix = id2matrix_rgb(imageData)
         prob.monomap(imageData.width, imageData.height, function(_error, vshiftmap) {
-            var shiftmap = shiftmapArrayToObj(vshiftmap);
             console.log("shiftmap discontinuities: " + shiftmaps.countShiftmapDiscontinuties(shiftmap));
-            var dest = applyShiftmap(imageData, shiftmap);
+            var dest = applyShiftmap(img_matrix, shiftmap);
             matrix2id_rgba(dest, imageData);
             callback();
         });
