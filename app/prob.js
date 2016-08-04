@@ -28,8 +28,8 @@ var monomap = function() {
                 // pixel saliency (through gradient)
                 var psal = saliency.data[(i + vec[0]) * saliency.cols +
                                          (j + vec[1])];
-                var salscore = ((psal !== psal) || !psal) ? 0 : (Math.round(psal) - 50);
-                factor(1000*salscore);
+                var salscore = ((psal !== psal) || !psal) ? 0 : (Math.round(psal) - 127);
+                factor(100000*salscore);
                 return vec;
             }, _.range(w));
         }, _.range(h));
@@ -40,14 +40,19 @@ var monomap = function() {
         return proposal;
     };
 
-    var maxap = Infer({method: 'MCMC',
-                       samples: 50,
-                       verbose: true,
-                       onlyMAP: true}, model);
+    // var maxap = Infer({method: 'MCMC',
+    //                    samples: 50,
+    //                    verbose: true,
+    //                    onlyMAP: true}, model);
+    // var maxval = maxap[Object.keys(maxap)[0]].dist;
+    // return JSON.parse(Object.keys(maxval)[0]);
     
-    var maxval = maxap[Object.keys(maxap)[0]].dist;
-    //console.log(JSON.parse(Object.keys(maxval)[0]));
-    return JSON.parse(Object.keys(maxval)[0]);
+    var maxap = Infer({method: 'SMC',
+                       particles: 1000
+                       //rejuvSteps: 1,
+                       //rejuvKernel: 'HMC'  // slow?
+                      }, model);
+    return MAP(maxap).val;
 };
 
 function evalf(fun, callback) {
