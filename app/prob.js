@@ -7,7 +7,8 @@ g_monomap_in = {};
 // XXX: figure out how to compile this at build time
 var monomap = function() {
     var w = g_monomap_in.width,
-        h = g_monomap_in.height;
+        h = g_monomap_in.height,
+        saliency = g_monomap_in.saliency;
 
     var clamp = function(x,y) {
         // XXX: is it better to condition instead?
@@ -21,14 +22,18 @@ var monomap = function() {
         var proposal = map(function(i) {
             map(function(j) {
                 // pixel rearrangement: force left/right columns to stay the same
-                if (j === 0 || j === (w-1)) {
-                    return [i,j];
-                } else {
-                    return clamp(sample(xs), sample(ys));
-                }
-                // TODO: pixel saliency (through gradient)
+                var vec = (
+                    j === 0 || j === (w-1)
+                          ) ? [i,j] : clamp(sample(xs), sample(ys));
+                // pixel saliency (through gradient)
+                var psal = saliency.data[(i + vec[0]) * saliency.cols +
+                                         (j + vec[1])];
+                var salscore = ((psal !== psal) || !psal) ? 0 : (Math.round(psal) - 50);
+                factor(1000*salscore);
+                return vec;
             }, _.range(w));
         }, _.range(h));
+        //console.log(proposal);
         // smoothness term: shift-map monotonicity
         factor(-10*shiftmaps.countShiftmapDiscontinuties(proposal));
         // TODO color / gradient differences
@@ -49,7 +54,10 @@ function evalf(fun, callback) {
     var term = ['(',fun.toString(),')()'].join('');
     var wpterm = eval.call({}, webppl.compile(term));
     
-    var handleError = function() {
+    var handleError = function(e) {
+        if (e) {
+            console.error(e);
+        }
         callback(arguments, null);
     };
     var timeslice = 100;
@@ -72,8 +80,8 @@ function evalf(fun, callback) {
 }
 
 module.exports = {
-    monomap: function(w, h, callback) {
-        g_monomap_in = {width: w, height: h};
+    monomap: function(w, h, s, callback) {
+        g_monomap_in = {width: w, height: h, saliency: s};
         evalf(monomap, callback);
     }
 };

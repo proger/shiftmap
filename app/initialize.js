@@ -1,7 +1,7 @@
 var jsfeat = require("jsfeat");
 var profiler = require("./profiler.js");
 var compatibility = require("./compatibility.js");
-prob = require("./prob.js");
+prob = require("./prob.js"); // global to be available from js console
 var shiftmaps = require("./shiftmaps.js");
 
 /// repopulates RGBA imageData buffer using the grayscale matrix (mutating)
@@ -10,7 +10,7 @@ function matrix2id_gray(matrix, imageData) {
     var alpha = (0xff << 24);
     var i = matrix.cols*matrix.rows, pix = 0;
     while (--i >= 0) {
-        pix = 128 + Math.round(0.1 * matrix.data[i]);
+        pix = Math.round(0.3 * matrix.data[i]);
         data_u32[i] = alpha | (pix << 16) | (pix << 8) | pix;
     }
 }
@@ -61,7 +61,7 @@ function withCanvasImageData(canvas, image, callback) {
     });
 }
 
-function dumbShiftmap(w, h, callback) {
+function dumbShiftmap(w, h, _saliency, callback) {
     var shiftmap = new Array(h);
     for(var i = 0; i < shiftmap.length; i++) {
         shiftmap[i] = new Array(w);
@@ -78,15 +78,18 @@ function tick() {
 
     withCanvasImageData(document.getElementById('canvas'), img, function(imageData, callback) {
         var img_matrix = id2matrix_rgb(imageData);
-
-        //var sf = prob.monomap;
-        var sf = dumbShiftmap;
+        var gradient = shiftmaps.getGradientMagnitude(img_matrix);
         
-        sf(imageData.width, imageData.height, function(_error, shiftmap) {
+        var sf = null;
+        sf = prob.monomap; // just comment out this one
+        
+        (sf || dumbShiftmap)(imageData.width /2, imageData.height, gradient, function(_error, shiftmap) {
             console.log("shiftmap discontinuities: " + shiftmaps.countShiftmapDiscontinuties(shiftmap));
             console.log("RGB and grad discontinuities: " + shiftmaps.getColorAndGradDiscontinuties(img_matrix, shiftmap));
             var dest = shiftmaps.applyShiftmap(img_matrix, shiftmap);
             matrix2id_rgba(dest, imageData);
+
+            //matrix2id_gray(gradient, imageData);
             callback();
         });
     });
