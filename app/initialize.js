@@ -83,13 +83,13 @@ function tick() {
         var sf = null;
         sf = prob.monomap; // just comment out this one
 
-        (sf || dumbShiftmap)(imageData.width /2,
+        (sf || dumbShiftmap)(imageData.width/2,
                              imageData.height,
                              gradient,
                              img_matrix,
                              function(_error, shiftmap) {
-            console.log("shiftmap discontinuities: " + shiftmaps.countShiftmapDiscontinuties(shiftmap));
-            console.log("RGB and grad discontinuities: " + shiftmaps.getColorAndGradDiscontinuties(img_matrix, shiftmap));
+            //console.log("shiftmap discontinuities: " + shiftmaps.countShiftmapDiscontinuties(shiftmap));
+            //console.log("RGB and grad discontinuities: " + shiftmaps.getColorAndGradDiscontinuties(img_matrix, shiftmap));
             var dest = shiftmaps.applyShiftmap(img_matrix, shiftmap);
             matrix2id_rgba(dest, imageData);
 
