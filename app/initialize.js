@@ -79,10 +79,10 @@ function tick() {
     withCanvasImageData(document.getElementById('canvas'), img, function(imageData, callback) {
         var img_matrix = id2matrix_rgb(imageData);
         var gradient = shiftmaps.getGradientMagnitude(img_matrix);
-        
+
         var sf = null;
         sf = prob.monomap; // just comment out this one
-        
+
         (sf || dumbShiftmap)(imageData.width /2, imageData.height, gradient, function(_error, shiftmap) {
             console.log("shiftmap discontinuities: " + shiftmaps.countShiftmapDiscontinuties(shiftmap));
             console.log("RGB and grad discontinuities: " + shiftmaps.getColorAndGradDiscontinuties(img_matrix, shiftmap));

@@ -24,7 +24,7 @@ var monomap = function() {
                 // pixel rearrangement: force left/right columns to stay the same
                 var vec = (
                     j === 0 || j === (w-1)
-                          ) ? [i,j] : clamp(sample(xs), sample(ys));
+                          ) ? [j,i] : clamp(sample(xs), sample(ys));
                 // pixel saliency (through gradient)
                 var psal = saliency.data[(i + vec[0]) * saliency.cols +
                                          (j + vec[1])];
@@ -46,9 +46,9 @@ var monomap = function() {
     //                    onlyMAP: true}, model);
     // var maxval = maxap[Object.keys(maxap)[0]].dist;
     // return JSON.parse(Object.keys(maxval)[0]);
-    
+
     var maxap = Infer({method: 'SMC',
-                       particles: 1000
+                       particles: 10
                        //rejuvSteps: 1,
                        //rejuvKernel: 'HMC'  // slow?
                       }, model);
@@ -58,7 +58,7 @@ var monomap = function() {
 function evalf(fun, callback) {
     var term = ['(',fun.toString(),')()'].join('');
     var wpterm = eval.call({}, webppl.compile(term));
-    
+
     var handleError = function(e) {
         if (e) {
             console.error(e);

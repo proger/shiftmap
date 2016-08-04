@@ -60,18 +60,16 @@ function getColorAndGradDiscontinuties(src, shiftmap) {
                 var src_ii = i + shiftmap[i][j][1] + dirs[d][1]
                 var src_jj = j + shiftmap[i][j][0] + dirs[d][0]
                 // Handle top and bottom rows
-                if(src_ii < 0 || src_ii === src.rows) {
+                if(src_ii < 0 || src_ii >= src.rows) {
                     continue;
                 }
                 // Handle left and right cols
-                if (src_jj < 0 || src_jj === src.cols) {
+                if (src_jj < 0 || src_jj >= src.cols) {
                     continue;
                 }
 
                 var res_idx = 3 * (res_ii * res.cols + res_jj)
                 var src_idx = 3 * (src_ii * src.cols + src_jj)
-
-
 
                 var s = 0.0;
                 for(var c = 0; c < 3; c++) {
