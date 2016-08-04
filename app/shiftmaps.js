@@ -128,5 +128,6 @@ function applyShiftmap(src, shiftmap) {
 module.exports = {
     countShiftmapDiscontinuties: countShiftmapDiscontinuties,
     getColorAndGradDiscontinuties: getColorAndGradDiscontinuties,
-    applyShiftmap: applyShiftmap
+    applyShiftmap: applyShiftmap,
+    getGradientMagnitude: getGradientMagnitude
 };
