@@ -57608,7 +57608,7 @@ module.exports = function(env) {
   function makeSimpleVMCallback() {
     return makeVMCallback({
       iteration: function(trace, i) {
-        console.log(formatOutput(trace, i));
+        //console.log(formatOutput(trace, i));
       },
       finish: _.identity
     });
