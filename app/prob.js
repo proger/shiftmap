@@ -65,8 +65,8 @@ var monomap = function() {
         var psal = saliency.data[(i + vec[1]) * saliency.cols +
                                  (j + vec[0])];
         var salscore = ((psal !== psal) || !psal) ? 0 : Math.round(psal);
-        factor(10*salscore);
-        factor(vec[0] >= prev[0] ? -10 : 100); // map continuity
+        factor(100*salscore);
+        factor(vec[0] >= prev[0] ? -100 : 100); // map continuity
         //condition(vec[0] >= prev[0]);
         return vec;
       }, [vec0], _.range(1, w-1));
@@ -74,23 +74,41 @@ var monomap = function() {
       var last = [img_matrix.cols-w-2,0]; // pixel rearrangement: rightmost column stays the same
       return [vec0].concat(rest.concat([last]));
     }, _.range(h));
-    // smoothness term: shift-map continuity
+    // smoothness term: shift-map monotonicity
     var cont = shiftmaps.countShiftmapDiscontinuties(proposal);
     factor(-0.0001*cont);
     // color / gradient continuity
     var gradcont = shiftmaps.getColorAndGradDiscontinuties(img_matrix, proposal);
-    factor(-0.000001*gradcont);
+    factor(-0.0001*gradcont);
     return proposal;
   };
 
   var maxap = Infer({method: 'MCMC',
-                     samples: 1000,
+                     samples: 100000,
                      verbose: true,
                      onlyMAP: true,
                      callbacks: prob.progressCallbacks()
                     }, model);
   var maxval = maxap[Object.keys(maxap)[0]].dist;
   return JSON.parse(Object.keys(maxval)[0]);
+
+
+  // var maxap = Infer({method: 'forward',
+  //                    samples: 1
+  //                   }, model);
+  // var maxval = maxap[Object.keys(maxap)[0]].dist;
+  // return JSON.parse(Object.keys(maxval)[0]);
+
+  // var mh = MAP(Infer({method: 'incrementalMH', samples: 5000, lag: 5, burn: 10}, model)).val;
+  // return mh;
+
+  // var dist = Infer({method: 'optimize',
+  //                 optMethod: {adam: {stepSize: 0.0001}}, // note: stepSize matters a lot
+  //                 steps: 20
+  //                  }, model);
+  // var s = sample(dist);
+  // console.log(s);
+  // return s;
 
   // var maxap = Infer({method: 'SMC',
   //                    particles: 10,

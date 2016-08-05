@@ -103,13 +103,13 @@ function tick() {
 
     withCanvasImageData(document.getElementById('canvas'), img, function(imageData, callback) {
         var img_matrix = id2matrix_rgb(imageData);
-        var gradient = shiftmaps.getGradientMagnitude(img_matrix);
+        //var gradient = shiftmaps.getGradientMagnitude(img_matrix);
         var sal_matrix = id2matrix_gray(getImageData(sal));
 
         var sf = null;
         sf = prob.monomap; // just comment out this one
 
-        (sf || dumbShiftmap)(imageData.width/2,
+        (sf || dumbShiftmap)(imageData.width / 2,
                              imageData.height,
                              sal_matrix,
                              img_matrix,
