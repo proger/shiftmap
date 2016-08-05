@@ -120,11 +120,11 @@ function applyShiftmap(src, shiftmap) {
       var src_loc = [j + tx, i + ty];
 
       // XXX: this is still firing
-      // var context = "loc: " + [j,i] + " shift: " + [tx,ty] + " dims: " + [src.cols,src.rows];
-      // assert(src_loc[0] >= 0, "src_loc[0] underflow: " + context);
-      // assert(src_loc[1] >= 0, "src_loc[1] underflow: " + context);
-      // assert(src_loc[0] < src.cols, "src_loc[0] is out of row bounds: " + context);
-      // assert(src_loc[1] < src.rows, "src_loc[1] is out of col bounds: " + context);
+      var context = "loc: " + [j,i] + " shift: " + [tx,ty] + " dims: " + [src.cols,src.rows];
+      assert(src_loc[0] >= 0, "src_loc[0] underflow: " + context);
+      assert(src_loc[1] >= 0, "src_loc[1] underflow: " + context);
+      assert(src_loc[0] < src.cols, "src_loc[0] is out of col bounds: " + context);
+      assert(src_loc[1] < src.rows, "src_loc[1] is out of row bounds: " + context);
 
       var dest_idx = 3 * (i * shiftmap[i].length + j);
       var src_idx = 3 * (src_loc[1] * src.cols + src_loc[0]);

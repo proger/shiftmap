@@ -1,5 +1,6 @@
 console.log("webppl vsn: " + webppl.version);
 
+assert = require("assert"); // global!
 shiftmaps = require("./shiftmaps.js"); // global!
 
 g_monomap_in = {};
@@ -26,12 +27,19 @@ var monomap = function() {
     var yMax = img_matrix.rows - i - 1;
     var vec = [Math.min(Math.floor(x*xMax), xMax),
                Math.min(Math.floor(y*yMax), yMax)];
-    //console.log([x,y,xMax,yMax, "k:", vec[0], vec[1]]);
     return vec;
+  };
+  
+  var foldl = function(fn, init, ar) {
+    if (ar.length === 0) {
+      return init;
+    } else {
+      return foldl(fn, fn(init, ar[0]), ar.slice(1));
+    }
   };
 
   var maplast = function(f, init, xs) {
-    return reduce(function(x, acc) {
+    return foldl(function(acc, x) {
       var prev = acc[acc.length-1];
       return acc.concat([f(prev, x)]);
     }, init, xs);
@@ -56,7 +64,7 @@ var monomap = function() {
         // pixel saliency (through gradient)
         var psal = saliency.data[(i + vec[1]) * saliency.cols +
                                  (j + vec[0])];
-        var salscore = ((psal !== psal) || !psal) ? 0 : Math.max(0, (Math.round(psal) - 150));
+        var salscore = ((psal !== psal) || !psal) ? 0 : Math.round(psal);
         factor(10*salscore);
         factor(vec[0] >= prev[0] ? -10 : 100); // map continuity
         //condition(vec[0] >= prev[0]);
@@ -66,7 +74,6 @@ var monomap = function() {
       var last = [img_matrix.cols-w-2,0]; // pixel rearrangement: rightmost column stays the same
       return [vec0].concat(rest.concat([last]));
     }, _.range(h));
-    //console.log(proposal);
     // smoothness term: shift-map continuity
     var cont = shiftmaps.countShiftmapDiscontinuties(proposal);
     factor(-0.0001*cont);
@@ -139,7 +146,10 @@ function evalf(fun, callback) {
 
 module.exports = {
   monomap: function(w, h, s, i, callback) {
-    g_monomap_in = {width: w, height: h, saliency: s, img_matrix: i};
+    g_monomap_in = {width: w,
+                    height: h,
+                    saliency: s,
+                    img_matrix: i};
     evalf(monomap, callback);
   },
   progressCallbacks: progressCallbacks
