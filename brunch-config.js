@@ -6,7 +6,7 @@ module.exports = {
     templates: {joinTo: 'app.js'}
   },
   watcher: {
-    usePolling: true,
+    usePolling: true
     // ignored: [/.*#.*/],
     // atomic: 5000,
     // awaitWriteFinish: true
