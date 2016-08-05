@@ -41,8 +41,8 @@ var monomap = function() {
                         0
                        );
         // pixel saliency (through gradient)
-        var psal = saliency.data[(i + vec[0]) * saliency.cols +
-                                 (j + vec[1])];
+        var psal = saliency.data[(i + vec[1]) * saliency.cols +
+                                 (j + vec[0])];
         var salscore = ((psal !== psal) || !psal) ? 0 : Math.max(0, (Math.round(psal) - 150));
         factor(salscore);
         factor(vec[0] >= prev[0] ? -10 : 100); // map continuity

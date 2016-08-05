@@ -5,12 +5,12 @@ prob = require("./prob.js"); // global to be available from js console
 var shiftmaps = require("./shiftmaps.js");
 
 /// repopulates RGBA imageData buffer using the grayscale matrix (mutating)
-function matrix2id_gray(matrix, imageData) {
+function matrix2id_gray(matrix, imageData, scale = 1.0) {
     var data_u32 = new Uint32Array(imageData.data.buffer);
     var alpha = (0xff << 24);
     var i = matrix.cols*matrix.rows, pix = 0;
     while (--i >= 0) {
-        pix = Math.round(0.3 * matrix.data[i]);
+        pix = Math.round(scale * matrix.data[i]);
         data_u32[i] = alpha | (pix << 16) | (pix << 8) | pix;
     }
 }
@@ -52,6 +52,23 @@ function id2matrix_rgb(imageData) {
     return matrix
 }
 
+function id2matrix_gray(imageData) {
+    var matrix = new jsfeat.matrix_t(imageData.width, imageData.height, jsfeat.U8_t | jsfeat.C1_t);
+    for(var i = 0; i < matrix.rows; i++) {
+        for(var j = 0; j < matrix.cols; j++) {
+            var dest_idx = (i * matrix.cols + j)
+            var src_idx = 4 * (i * imageData.width + j)
+
+            matrix.data[dest_idx] = 0.299 * imageData.data[src_idx] +
+                                    0.587 * imageData.data[src_idx + 1] +
+                                    0.114 * imageData.data[src_idx + 2];
+        }
+    }
+    return matrix
+}
+
+
+
 function withCanvasImageData(canvas, image, callback) {
     var ctx = canvas.getContext('2d');
     ctx.drawImage(image, 0, 0);
@@ -59,6 +76,13 @@ function withCanvasImageData(canvas, image, callback) {
     callback(imageData, function() {
         ctx.putImageData(imageData, 0, 0);
     });
+}
+
+function getImageData(image) {
+    var canvas = document.createElement('canvas');
+    var context = canvas.getContext('2d');
+    context.drawImage(image, 0, 0);
+    return imageData = context.getImageData(0, 0, image.width, image.height);
 }
 
 function dumbShiftmap(w, h, _saliency, img_matrix, callback) {
@@ -75,17 +99,19 @@ function dumbShiftmap(w, h, _saliency, img_matrix, callback) {
 
 function tick() {
     var img = document.getElementById("sourceImage");
+    var sal = document.getElementById("saliencyImage");
 
     withCanvasImageData(document.getElementById('canvas'), img, function(imageData, callback) {
         var img_matrix = id2matrix_rgb(imageData);
         var gradient = shiftmaps.getGradientMagnitude(img_matrix);
+        var sal_matrix = id2matrix_gray(getImageData(sal));
 
         var sf = null;
         sf = prob.monomap; // just comment out this one
 
         (sf || dumbShiftmap)(imageData.width/2,
                              imageData.height,
-                             gradient,
+                             sal_matrix,
                              img_matrix,
                              function(_error, shiftmap) {
             //console.log("shiftmap discontinuities: " + shiftmaps.countShiftmapDiscontinuties(shiftmap));
@@ -93,6 +119,7 @@ function tick() {
             var dest = shiftmaps.applyShiftmap(img_matrix, shiftmap);
             matrix2id_rgba(dest, imageData);
 
+            //matrix2id_gray(sal_matrix, imageData);
             //matrix2id_gray(gradient, imageData);
             callback();
         });
