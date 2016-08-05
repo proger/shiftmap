@@ -12,6 +12,7 @@
     "build": "brunch build --production"
   },
   "dependencies": {
+    "assert": "^1.4.1",
     "jsfeat": "0.0.8"
   },
   "devDependencies": {

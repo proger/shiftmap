@@ -61,16 +61,16 @@ function withCanvasImageData(canvas, image, callback) {
     });
 }
 
-function dumbShiftmap(w, h, _saliency, callback) {
-    var shiftmap = new Array(h);
-    for(var i = 0; i < shiftmap.length; i++) {
-        shiftmap[i] = new Array(w);
-        for(var j = 0; j < shiftmap[i].length; j++) {
-            shiftmap[i][j] = [10,0];
-        }
+function dumbShiftmap(w, h, _saliency, img_matrix, callback) {
+  var shiftmap = new Array(h);
+  for (var i = 0; i < shiftmap.length; i++) {
+    shiftmap[i] = new Array(w);
+    for (var j = 0; j < shiftmap[i].length; j++) {
+      shiftmap[i][j] = [Math.min(100, (img_matrix.cols - j - 1)), 0];
     }
+  }
 
-    callback(null, shiftmap);
+  callback(null, shiftmap);
 }
 
 function tick() {

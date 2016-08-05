@@ -1,4 +1,5 @@
 var jsfeat = require("jsfeat");
+var assert = require("assert");
 
 function countShiftmapDiscontinuties(shiftmap) {
     var count = 0;
@@ -108,21 +109,29 @@ function getGradientMagnitude(img) {
     return magnitude;
 }
 
+// src and dest are RGB arrays
 function applyShiftmap(src, shiftmap) {
-    var dest = new jsfeat.matrix_t(shiftmap[0].length, shiftmap.length, jsfeat.U8_t | jsfeat.C3_t);
-    for(var i = 0; i < shiftmap.length; i++) {
-        for(var j = 0; j < shiftmap[i].length; j++) {
-            var src_loc = [j + shiftmap[i][j][0],
-                           i + shiftmap[i][j][1]]
-            var dest_idx = 3 * (i * shiftmap[i].length + j)
-            var src_idx = 3 * (src_loc[1] * src.cols + src_loc[0])
+  var dest = new jsfeat.matrix_t(shiftmap[0].length, shiftmap.length, jsfeat.U8_t | jsfeat.C3_t);
+  for (var i = 0; i < shiftmap.length; i++) {
+    for (var j = 0; j < shiftmap[i].length; j++) {
+      var tx = shiftmap[i][j][0];
+      var ty = shiftmap[i][j][1];
 
-            dest.data[dest_idx] = src.data[src_idx];
-            dest.data[dest_idx + 1] = src.data[src_idx + 1];
-            dest.data[dest_idx + 2] = src.data[src_idx + 2];
-        }
+      var src_loc = [j + tx, i + ty];
+      assert(src_loc[0] >= 0, "src_loc[0] underflow: " + src_loc);
+      assert(src_loc[1] >= 0, "src_loc[1] underflow: " + src_loc);
+      assert(src_loc[0] < src.cols, "src_loc[0] is out of row bounds: " + src_loc);
+      assert(src_loc[1] < src.rows, "src_loc[1] is out of col bounds: " + src_loc);
+
+      var dest_idx = 3 * (i * shiftmap[i].length + j);
+      var src_idx = 3 * (src_loc[1] * src.cols + src_loc[0]);
+
+      dest.data[dest_idx] = src.data[src_idx];
+      dest.data[dest_idx + 1] = src.data[src_idx + 1];
+      dest.data[dest_idx + 2] = src.data[src_idx + 2];
     }
-    return dest;
+  }
+  return dest;
 }
 
 module.exports = {
