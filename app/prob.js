@@ -13,10 +13,21 @@ var monomap = function() {
       saliency = g_monomap_in.saliency,
       img_matrix = g_monomap_in.img_matrix;
 
-  var clamp = function(x,y) {
-    // XXX: is it better to condition instead?
-    return [Math.trunc(Math.min(Math.max(x, 0), w)),
-            Math.trunc(Math.min(Math.max(y, 0), h))];
+  var clampGamma = function(i,j,x,y) {
+    // XXX: is it better to factor instead?
+    var xMax = img_matrix.cols - j - 1;
+    var yMax = img_matrix.rows - i - 1;
+    return [Math.min(Math.max(Math.trunc(x), 0), xMax),
+            Math.min(Math.max(Math.trunc(y), 0), yMax)];
+  };
+
+  var clampBeta = function(i,j,x,y) {
+    var xMax = img_matrix.cols - j - 1;
+    var yMax = img_matrix.rows - i - 1;
+    var vec = [Math.min(Math.floor(x*xMax), xMax),
+               Math.min(Math.floor(y*yMax), yMax)];
+    //console.log([x,y,xMax,yMax, "k:", vec[0], vec[1]]);
+    return vec;
   };
 
   var maplast = function(f, init, xs) {
@@ -28,55 +39,59 @@ var monomap = function() {
 
   var model = function() {
     // the map is always monotone
-    var xs = Gamma({shape: 1, scale: 5});
+    //var xs = Gamma({shape: 1, scale: 10});
+    var xs = Beta({a: 1, b: 1});
     //var ys = Gaussian({mu: 0, sigma: 5});
 
     var proposal = map(function(i) {
       var vec0 = [0, 0]; // pixel rearrangement: leftmost column stays the same
 
       var rest = maplast(function(prev, j) {
-        var vec = clamp(sample(xs),
-                        // XXX: do not touch ys
-                        //sample(ys)
-                        0
-                       );
+        var vec = clampBeta(i, j,
+                            sample(xs),
+                            // XXX: do not touch ys
+                            //sample(ys)
+                            0
+                           );
         // pixel saliency (through gradient)
         var psal = saliency.data[(i + vec[1]) * saliency.cols +
                                  (j + vec[0])];
         var salscore = ((psal !== psal) || !psal) ? 0 : Math.max(0, (Math.round(psal) - 150));
-        factor(salscore);
+        factor(10*salscore);
         factor(vec[0] >= prev[0] ? -10 : 100); // map continuity
         //condition(vec[0] >= prev[0]);
         return vec;
       }, [vec0], _.range(1, w-1));
 
-      var last = [0, (w-j)]; // pixel rearrangement: rightmost column stays the same
+      var last = [img_matrix.cols-w-2,0]; // pixel rearrangement: rightmost column stays the same
       return [vec0].concat(rest.concat([last]));
     }, _.range(h));
     //console.log(proposal);
     // smoothness term: shift-map continuity
-    factor(-0.0001*shiftmaps.countShiftmapDiscontinuties(proposal));
-    // color / gradient differences
-    factor(-0.000001*shiftmaps.getColorAndGradDiscontinuties(img_matrix, proposal));
+    var cont = shiftmaps.countShiftmapDiscontinuties(proposal);
+    factor(-0.0001*cont);
+    // color / gradient continuity
+    var gradcont = shiftmaps.getColorAndGradDiscontinuties(img_matrix, proposal);
+    factor(-0.000001*gradcont);
     return proposal;
   };
 
-  // var maxap = Infer({method: 'MCMC',
-  //                    samples: 10000,
-  //                    verbose: true,
-  //                    onlyMAP: true,
-  //                    callbacks: prob.progressCallbacks()
-  //                   }, model);
-  // var maxval = maxap[Object.keys(maxap)[0]].dist;
-  // return JSON.parse(Object.keys(maxval)[0]);
-
-  var maxap = Infer({method: 'SMC',
-                     particles: 1000,
-                     debug: false
-                     // rejuvSteps: 2,
-                     // rejuvKernel: 'HMC'  // slow?
+  var maxap = Infer({method: 'MCMC',
+                     samples: 1000,
+                     verbose: true,
+                     onlyMAP: true,
+                     callbacks: prob.progressCallbacks()
                     }, model);
-  return MAP(maxap).val;
+  var maxval = maxap[Object.keys(maxap)[0]].dist;
+  return JSON.parse(Object.keys(maxval)[0]);
+
+  // var maxap = Infer({method: 'SMC',
+  //                    particles: 10,
+  //                    debug: false
+  //                    // rejuvSteps: 2,
+  //                    // rejuvKernel: 'HMC'  // slow?
+  //                   }, model);
+  // return MAP(maxap).val;
 };
 
 function progressCallbacks() {
